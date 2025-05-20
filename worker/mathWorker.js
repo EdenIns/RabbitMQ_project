@@ -1,7 +1,8 @@
 const amqp = require("amqplib");
 const { randomInt } = require("crypto");
+require("dotenv").config();
 
-const RABBITMQ_URL = "amqp://user:password@efrei20250519.hopto.org:5674";
+const RABBITMQ_URL = process.env.RABBITMQ_URL;
 const REQUEST_QUEUE = "calcul_requests";
 const RESULT_QUEUE = "calcul_results";
 

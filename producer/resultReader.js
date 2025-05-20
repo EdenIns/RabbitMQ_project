@@ -1,6 +1,7 @@
+require("dotenv").config();
 const amqp = require("amqplib");
 
-const RABBITMQ_URL = "amqp://user:password@efrei20250519.hopto.org:5674";
+const RABBITMQ_URL = process.env.RABBITMQ_URL;
 const RESULT_QUEUE = "calcul_results";
 
 async function startReader() {

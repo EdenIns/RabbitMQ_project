@@ -1,10 +1,12 @@
 const amqp = require("amqplib");
 const { randomInt } = require("crypto");
+require("dotenv").config();
 
-const RABBITMQ_URL = "amqp://user:password@efrei20250519.hopto.org:5674";
-const EXCHANGE_NAME = "calc_direct";
+const RABBITMQ_URL = process.env.RABBITMQ_URL;
+const DIRECT_EXCHANGE = "calc_direct";
+const FANOUT_EXCHANGE = "calc_fanout";
 
-const operations = ["add", "sub", "mul", "div"];
+const operations = ["add", "sub", "mul", "div", "all"];
 
 function getRandomOp() {
   const index = randomInt(operations.length);
@@ -16,7 +18,8 @@ async function connectAndSend() {
     const connection = await amqp.connect(RABBITMQ_URL);
     const channel = await connection.createChannel();
 
-    await channel.assertExchange(EXCHANGE_NAME, "direct", { durable: false });
+    await channel.assertExchange(DIRECT_EXCHANGE, "direct", { durable: false });
+    await channel.assertExchange(FANOUT_EXCHANGE, "fanout", { durable: false });
 
     setInterval(() => {
       const n1 = randomInt(1, 100);
@@ -24,10 +27,15 @@ async function connectAndSend() {
       const op = getRandomOp();
 
       const message = { n1, n2, op };
+      const buffer = Buffer.from(JSON.stringify(message));
 
-      channel.publish(EXCHANGE_NAME, op, Buffer.from(JSON.stringify(message)));
-
-      console.log(`Sent to "${op}" :`, message);
+      if (op === "all") {
+        channel.publish(FANOUT_EXCHANGE, "", buffer);
+        console.log(`use fanout:`, message);
+      } else {
+        channel.publish(DIRECT_EXCHANGE, op, buffer);
+        console.log(`Sent to "${op}":`, message);
+      }
     }, 5000);
   } catch (err) {
     console.error("Error:", err);
